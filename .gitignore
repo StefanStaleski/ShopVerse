@@ -18,12 +18,19 @@ build/
 */dist
 */build
 
+# Database
+*.sqlite
+*.sqlite3
+*.db
+*.postgres
+
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
 # IDE and editor files
 .idea/
@@ -36,29 +43,41 @@ Thumbs.db
 # Testing
 coverage/
 .nyc_output
+test-results/
+junit.xml
 
-# Temporary files
-*.tmp
-*.temp
-
-# Debug
-.debug
-
-# TypeScript cache
+# TypeScript
 *.tsbuildinfo
+.tscache/
+tsconfig.tsbuildinfo
 
-# Optional npm cache directory
+# Package managers
 .npm
+.pnpm-store/
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
 
-# Optional eslint cache
+# OS generated
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Optional caches
 .eslintcache
-
-# Production bundle
-/build
+.stylelintcache
+.prettiercache
 
 # Misc
-.DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+*.bak
+*.swp
+*.swo
+*~
+.env*.local
