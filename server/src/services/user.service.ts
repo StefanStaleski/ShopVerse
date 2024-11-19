@@ -1,5 +1,6 @@
 import { User } from "../models";
 import { UserInput, UserOutput, UserAttributes } from "../types";
+import { NotFoundError } from '../utils/errors';
 
 class UserService {
     async createUser(data: UserInput): Promise<UserOutput> {
@@ -61,6 +62,39 @@ class UserService {
         } catch (error) {
             throw new Error("Error deleting user");
         }
+    }
+
+    async listUsers(): Promise<UserOutput[]> {
+        const users = await User.findAll();
+        return users.map(user => {
+            const userData = user.get();
+            const { password, ...userOutput } = userData;
+            return userOutput as UserOutput;
+        });
+    }
+
+    async deactivateUser(id: string): Promise<UserOutput> {
+        const user = await User.findByPk(id);
+        if (!user) {
+            throw new NotFoundError('User not found');
+        }
+
+        await user.update({ isActive: false });
+        const userData = user.get();
+        const { password, ...userOutput } = userData;
+        return userOutput as UserOutput;
+    }
+
+    async activateUser(id: string): Promise<UserOutput> {
+        const user = await User.findByPk(id);
+        if (!user) {
+            throw new NotFoundError('User not found');
+        }
+
+        await user.update({ isActive: true });
+        const userData = user.get();
+        const { password, ...userOutput } = userData;
+        return userOutput as UserOutput;
     }
 }
 

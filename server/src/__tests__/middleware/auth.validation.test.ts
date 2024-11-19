@@ -21,25 +21,15 @@ describe('Auth Validation Middleware', () => {
         it('should pass valid login data', () => {
             mockRequest.body = {
                 email: 'test@example.com',
-                password: 'password123'
+                password: 'ValidPass123!'
             };
 
-            validateLogin(
-                mockRequest as Request,
-                mockResponse as Response,
-                nextFunction
-            );
-
+            validateLogin(mockRequest as Request, mockResponse as Response, nextFunction);
             expect(nextFunction).toHaveBeenCalled();
         });
 
         it('should reject missing fields', () => {
-            validateLogin(
-                mockRequest as Request,
-                mockResponse as Response,
-                nextFunction
-            );
-
+            validateLogin(mockRequest as Request, mockResponse as Response, nextFunction);
             expect(mockResponse.status).toHaveBeenCalledWith(400);
             expect(mockResponse.json).toHaveBeenCalledWith({
                 error: 'Email and password are required'
@@ -49,18 +39,26 @@ describe('Auth Validation Middleware', () => {
         it('should reject invalid email format', () => {
             mockRequest.body = {
                 email: 'invalid-email',
-                password: 'password123'
+                password: 'ValidPass123!'
             };
 
-            validateLogin(
-                mockRequest as Request,
-                mockResponse as Response,
-                nextFunction
-            );
-
+            validateLogin(mockRequest as Request, mockResponse as Response, nextFunction);
             expect(mockResponse.status).toHaveBeenCalledWith(400);
             expect(mockResponse.json).toHaveBeenCalledWith({
                 error: 'Invalid email format'
+            });
+        });
+
+        it('should reject password shorter than 8 characters', () => {
+            mockRequest.body = {
+                email: 'test@example.com',
+                password: 'short'
+            };
+
+            validateLogin(mockRequest as Request, mockResponse as Response, nextFunction);
+            expect(mockResponse.status).toHaveBeenCalledWith(400);
+            expect(mockResponse.json).toHaveBeenCalledWith({
+                error: 'Password must be at least 8 characters long'
             });
         });
     });
@@ -69,27 +67,17 @@ describe('Auth Validation Middleware', () => {
         it('should pass valid registration data', () => {
             mockRequest.body = {
                 email: 'test@example.com',
-                password: 'password123',
+                password: 'ValidPass123!',
                 firstName: 'John',
                 lastName: 'Doe'
             };
 
-            validateRegister(
-                mockRequest as Request,
-                mockResponse as Response,
-                nextFunction
-            );
-
+            validateRegister(mockRequest as Request, mockResponse as Response, nextFunction);
             expect(nextFunction).toHaveBeenCalled();
         });
 
         it('should reject missing fields', () => {
-            validateRegister(
-                mockRequest as Request,
-                mockResponse as Response,
-                nextFunction
-            );
-
+            validateRegister(mockRequest as Request, mockResponse as Response, nextFunction);
             expect(mockResponse.status).toHaveBeenCalledWith(400);
             expect(mockResponse.json).toHaveBeenCalledWith({
                 error: 'All fields are required'
@@ -99,21 +87,79 @@ describe('Auth Validation Middleware', () => {
         it('should reject short names', () => {
             mockRequest.body = {
                 email: 'test@example.com',
-                password: 'password123',
+                password: 'ValidPass123!',
                 firstName: 'J',
-                lastName: 'D'
+                lastName: 'Doe'
             };
 
-            validateRegister(
-                mockRequest as Request,
-                mockResponse as Response,
-                nextFunction
-            );
-
+            validateRegister(mockRequest as Request, mockResponse as Response, nextFunction);
             expect(mockResponse.status).toHaveBeenCalledWith(400);
             expect(mockResponse.json).toHaveBeenCalledWith({
-                error: 'First name must be at least 2 characters long'
+                error: 'First name must be at least 2 characters long and contain only letters'
             });
+        });
+
+        it('should reject names with special characters', () => {
+            mockRequest.body = {
+                email: 'test@example.com',
+                password: 'ValidPass123!',
+                firstName: 'John@',
+                lastName: 'Doe'
+            };
+
+            validateRegister(mockRequest as Request, mockResponse as Response, nextFunction);
+            expect(mockResponse.status).toHaveBeenCalledWith(400);
+            expect(mockResponse.json).toHaveBeenCalledWith({
+                error: 'First name must be at least 2 characters long and contain only letters'
+            });
+        });
+
+        it('should reject password without uppercase letter', () => {
+            mockRequest.body = {
+                email: 'test@example.com',
+                password: 'validpass123!',
+                firstName: 'John',
+                lastName: 'Doe'
+            };
+
+            validateRegister(mockRequest as Request, mockResponse as Response, nextFunction);
+            expect(mockResponse.status).toHaveBeenCalledWith(400);
+        });
+
+        it('should reject password without lowercase letter', () => {
+            mockRequest.body = {
+                email: 'test@example.com',
+                password: 'VALIDPASS123!',
+                firstName: 'John',
+                lastName: 'Doe'
+            };
+
+            validateRegister(mockRequest as Request, mockResponse as Response, nextFunction);
+            expect(mockResponse.status).toHaveBeenCalledWith(400);
+        });
+
+        it('should reject password without number', () => {
+            mockRequest.body = {
+                email: 'test@example.com',
+                password: 'ValidPass!',
+                firstName: 'John',
+                lastName: 'Doe'
+            };
+
+            validateRegister(mockRequest as Request, mockResponse as Response, nextFunction);
+            expect(mockResponse.status).toHaveBeenCalledWith(400);
+        });
+
+        it('should reject password without special character', () => {
+            mockRequest.body = {
+                email: 'test@example.com',
+                password: 'ValidPass123',
+                firstName: 'John',
+                lastName: 'Doe'
+            };
+
+            validateRegister(mockRequest as Request, mockResponse as Response, nextFunction);
+            expect(mockResponse.status).toHaveBeenCalledWith(400);
         });
     });
 }); 
