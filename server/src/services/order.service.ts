@@ -78,6 +78,7 @@ class OrderService {
         transaction: Transaction
     ): Promise<number> {
         let total = 0;
+        const orderItems = [];
 
         for (const item of items) {
             const product = await Product.findByPk(item.productId, { transaction });
@@ -96,17 +97,19 @@ class OrderService {
             const itemTotal = Number(product.price) * item.quantity;
             total += itemTotal;
 
-            await OrderItem.create({
+            orderItems.push({
                 orderId,
                 productId: item.productId,
                 quantity: item.quantity,
                 price: product.price
-            }, { transaction });
+            });
 
             await product.update({
                 stock: product.stock - item.quantity
             }, { transaction });
         }
+
+        await OrderItem.bulkCreate(orderItems, { transaction });
 
         if (total <= OrderService.MIN_ORDER_TOTAL) {
             throw new Error('Order total must be greater than zero');
