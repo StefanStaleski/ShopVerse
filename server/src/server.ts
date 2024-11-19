@@ -4,6 +4,11 @@ import cors from "cors";
 import morgan from "morgan";
 import helmet from "helmet";
 import { connectDatabase } from "./config/database";
+import { errorHandler } from './middleware/error.middleware';
+
+// Import routes
+import authRoutes from './routes/auth.routes';
+import orderRoutes from './routes/order.routes';
 
 class Server {
     private app: Express;
@@ -14,6 +19,7 @@ class Server {
         this.port = process.env.PORT || 5000;
         this.middlewares();
         this.routes();
+        this.errorHandling();
     }
 
     private middlewares(): void {
@@ -32,6 +38,10 @@ class Server {
     }
 
     private routes(): void {
+        // API routes
+        this.app.use('/api/auth', authRoutes);
+        this.app.use('/api/orders', orderRoutes);
+
         // Health check route
         this.app.get("/healthcheck", (req: Request, res: Response) => {
             res.status(200).json({
@@ -49,12 +59,13 @@ class Server {
         });
     }
 
+    private errorHandling(): void {
+        this.app.use(errorHandler);
+    }
+
     public async start(): Promise<void> {
         try {
-            // Connect to database
             await connectDatabase();
-
-            // Start server
             this.app.listen(this.port, () => {
                 console.log(`🚀 Server is running on port ${this.port}`);
                 console.log(`📝 Environment: ${process.env.NODE_ENV}`);

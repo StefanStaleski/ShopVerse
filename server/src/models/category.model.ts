@@ -30,12 +30,10 @@ Category.init(
         description: {
             type: DataTypes.TEXT,
             allowNull: true,
-            defaultValue: null,
         },
         imageUrl: {
             type: DataTypes.STRING,
             allowNull: true,
-            defaultValue: null,
         },
         isActive: {
             type: DataTypes.BOOLEAN,
@@ -44,11 +42,6 @@ Category.init(
         parentId: {
             type: DataTypes.UUID,
             allowNull: true,
-            defaultValue: null,
-            references: {
-                model: 'categories',
-                key: 'id'
-            }
         }
     },
     {
