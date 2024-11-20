@@ -1,82 +1,89 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import productService from '../services/product.service';
-import { ProductFilterOptions, PaginationOptions, ProductAttributes } from '../types';
+import { logger } from '../utils/logger';
+import { ValidationError, NotFoundError } from '../utils/errors';
+import { PaginationOptions, ProductAttributes, ProductFilterOptions } from '../types';
 
-class ProductController {
-    async createProduct(req: Request, res: Response, next: NextFunction) {
-        try {
-            const product = await productService.createProduct(req.body);
-            res.status(201).json(product);
-        } catch (error) {
-            next(error);
+export const getProducts = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const filters: ProductFilterOptions = {
+            categoryId: req.query.categoryId as string,
+            minPrice: req.query.minPrice ? Number(req.query.minPrice) : undefined,
+            maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : undefined,
+            inStock: req.query.inStock === 'true',
+            searchQuery: req.query.search as string,
+            isActive: true
+        };
+
+        const pagination: PaginationOptions = {
+            page: Number(req.query.page) || 1,
+            limit: Number(req.query.limit) || 10,
+            sortBy: (req.query.sortBy as keyof ProductAttributes) || 'createdAt',
+            sortOrder: (req.query.sortOrder as 'ASC' | 'DESC') || 'DESC'
+        };
+
+        const result = await productService.getProducts(filters, pagination);
+        res.status(200).json(result);
+    } catch (error) {
+        logger.error('Error fetching products:', error);
+        res.status(500).json({ error: 'Failed to fetch products' });
+    }
+};
+
+export const getProductById = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const product = await productService.getProductById(req.params.id);
+        res.status(200).json(product);
+    } catch (error) {
+        logger.error('Error fetching product:', error);
+        if (error instanceof NotFoundError) {
+            res.status(404).json({ error: error.message });
+        } else {
+            res.status(500).json({ error: 'Failed to fetch product' });
         }
     }
+};
 
-    async getProducts(req: Request, res: Response, next: NextFunction) {
-        try {
-            const { 
-                categoryId, 
-                minPrice, 
-                maxPrice, 
-                inStock, 
-                searchQuery,
-                page,
-                limit,
-                sortBy,
-                sortOrder 
-            } = req.query;
-
-            const filters: ProductFilterOptions = {
-                categoryId: categoryId as string,
-                minPrice: minPrice ? Number(minPrice) : undefined,
-                maxPrice: maxPrice ? Number(maxPrice) : undefined,
-                inStock: inStock === 'true',
-                searchQuery: searchQuery as string
-            };
-
-            const pagination: PaginationOptions = {
-                page: page ? Number(page) : undefined,
-                limit: limit ? Number(limit) : undefined,
-                sortBy: sortBy as keyof ProductAttributes,
-                sortOrder: sortOrder as 'ASC' | 'DESC'
-            };
-
-            const products = await productService.getProducts(filters, pagination);
-            res.json(products);
-        } catch (error) {
-            next(error);
+export const createProduct = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const product = await productService.createProduct(req.body);
+        res.status(201).json(product);
+    } catch (error) {
+        logger.error('Error creating product:', error);
+        if (error instanceof ValidationError) {
+            res.status(400).json({ error: error.message });
+        } else {
+            res.status(500).json({ error: 'Failed to create product' });
         }
     }
+};
 
-    async getProductById(req: Request, res: Response, next: NextFunction) {
-        try {
-            const { id } = req.params;
-            const product = await productService.getProductById(id);
-            res.json(product);
-        } catch (error) {
-            next(error);
+export const updateProduct = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const product = await productService.updateProduct(req.params.id, req.body);
+        res.status(200).json(product);
+    } catch (error) {
+        logger.error('Error updating product:', error);
+        if (error instanceof NotFoundError) {
+            res.status(404).json({ error: error.message });
+        } else if (error instanceof ValidationError) {
+            res.status(400).json({ error: error.message });
+        } else {
+            res.status(500).json({ error: 'Failed to update product' });
         }
     }
+};
 
-    async updateProduct(req: Request, res: Response, next: NextFunction) {
-        try {
-            const { id } = req.params;
-            const product = await productService.updateProduct(id, req.body);
-            res.json(product);
-        } catch (error) {
-            next(error);
+export const deleteProduct = async (req: Request, res: Response): Promise<void> => {
+    try {
+        await productService.deleteProduct(req.params.id);
+        res.status(204).send();
+    } catch (error) {
+        logger.error('Error deleting product:', error);
+        if (error instanceof NotFoundError) {
+            res.status(404).json({ error: error.message });
+        } else {
+            res.status(500).json({ error: 'Failed to delete product' });
         }
     }
-
-    async deleteProduct(req: Request, res: Response, next: NextFunction) {
-        try {
-            const { id } = req.params;
-            await productService.deleteProduct(id);
-            res.status(204).send();
-        } catch (error) {
-            next(error);
-        }
-    }
-}
-
-export default new ProductController(); 
+}; 

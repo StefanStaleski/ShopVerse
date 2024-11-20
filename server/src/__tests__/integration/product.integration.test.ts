@@ -89,7 +89,6 @@ describe('Product Integration Tests', () => {
         });
 
         it('should list products with pagination and filters', async () => {
-            // Create test product
             await Product.create({
                 id: uuidv4(),
                 ...mockProductInput,
@@ -99,6 +98,7 @@ describe('Product Integration Tests', () => {
 
             const response = await request(app)
                 .get('/api/products')
+                .set('Authorization', `Bearer ${userToken}`)
                 .query({
                     page: 1,
                     limit: 10,
@@ -122,7 +122,8 @@ describe('Product Integration Tests', () => {
             });
 
             const response = await request(app)
-                .get(`/api/products/${product.id}`);
+                .get(`/api/products/${product.id}`)
+                .set('Authorization', `Bearer ${userToken}`);
 
             expect(response.status).toBe(200);
             expect(response.body.id).toBe(product.id);
@@ -162,7 +163,22 @@ describe('Product Integration Tests', () => {
             expect(response.status).toBe(204);
 
             const deletedProduct = await Product.findByPk(product.id);
-            expect(deletedProduct).toBeNull();
+            expect(deletedProduct?.isActive).toBe(false);
+        });
+        it('should validate product data on creation', async () => {
+            const invalidProduct = {
+                ...mockProductInput,
+                price: -10,
+                categoryId
+            };
+
+            const response = await request(app)
+                .post('/api/products')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send(invalidProduct);
+
+            expect(response.status).toBe(400);
+            expect(response.body).toHaveProperty('error');
         });
     });
 }); 

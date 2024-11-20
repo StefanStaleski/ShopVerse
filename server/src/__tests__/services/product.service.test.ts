@@ -142,8 +142,17 @@ describe('ProductService', () => {
         });
 
         it('should handle empty filters and use default pagination', async () => {
+            const mockProducts = [{
+                id: '1',
+                name: 'Test Product',
+                get: () => ({
+                    id: '1',
+                    name: 'Test Product'
+                })
+            }];
+            
             (Product.findAndCountAll as jest.Mock).mockResolvedValue({
-                rows: [mockSequelizeProduct],
+                rows: mockProducts,
                 count: 1
             });
 
@@ -155,7 +164,7 @@ describe('ProductService', () => {
                     where: { isActive: true },
                     limit: 10,
                     offset: 0,
-                    order: [['createdAt', 'DESC']]
+                    order: [['id', 'DESC']]
                 })
             );
         });

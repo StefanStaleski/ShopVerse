@@ -1,32 +1,27 @@
 import { Router } from 'express';
-import productController from '../controllers/product.controller';
+import { 
+    getProducts, 
+    getProductById, 
+    createProduct, 
+    updateProduct, 
+    deleteProduct 
+} from '../controllers/product.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { authorize } from '../middleware/authorization.middleware';
-import { validateCreateProduct, validateUpdateProduct } from '../middleware/validation/product.validation'
+import { validateCreateProduct, validateUpdateProduct } from '../middleware/validation/product.validation';
 
 const router = Router();
 
-router.get('/', productController.getProducts);
-router.get('/:id', productController.getProductById);
+// All routes require authentication
+router.use(authenticate);
 
-router.post('/',
-    authenticate,
-    authorize(['admin']),
-    validateCreateProduct,
-    productController.createProduct
-);
+// Public routes (authenticated users)
+router.get('/', getProducts);
+router.get('/:id', getProductById);
 
-router.put('/:id',
-    authenticate,
-    authorize(['admin']),
-    validateUpdateProduct,
-    productController.updateProduct
-);
-
-router.delete('/:id',
-    authenticate,
-    authorize(['admin']),
-    productController.deleteProduct
-);
+// Admin only routes
+router.post('/', authorize(['admin']), validateCreateProduct, createProduct);
+router.put('/:id', authorize(['admin']), validateUpdateProduct, updateProduct);
+router.delete('/:id', authorize(['admin']), deleteProduct);
 
 export default router; 

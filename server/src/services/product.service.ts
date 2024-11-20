@@ -1,126 +1,118 @@
 import { Op } from 'sequelize';
 import { Product } from '../models';
-import { 
-    ProductInput, 
-    ProductOutput, 
-    ProductFilterOptions,
-    PaginationOptions,
-    PaginatedProductsResult 
-} from '../types';
+import { ProductInput, ProductOutput, PaginationOptions, ProductFilterOptions } from '../types';
 import { ValidationError, NotFoundError } from '../utils/errors';
+import { v4 as uuidv4 } from 'uuid';
 
 class ProductService {
-    private static readonly MIN_PRICE = 0.01;
-    private static readonly MAX_PRICE = 999999.99;
-    private static readonly MIN_STOCK = 0;
-    private static readonly MAX_STOCK = 99999;
+    private static readonly MIN_NAME_LENGTH = 3;
+    private static readonly MIN_DESCRIPTION_LENGTH = 10;
 
     private validateProductData(data: Partial<ProductInput>): void {
-        if (data.price !== undefined && (data.price < ProductService.MIN_PRICE || data.price > ProductService.MAX_PRICE)) {
-            throw new ValidationError(`Price must be between ${ProductService.MIN_PRICE} and ${ProductService.MAX_PRICE}`);
+        if (data.name !== undefined && (typeof data.name !== 'string' || data.name.length < ProductService.MIN_NAME_LENGTH)) {
+            throw new ValidationError(`Name must be at least ${ProductService.MIN_NAME_LENGTH} characters long`);
         }
 
-        if (data.stock !== undefined && (data.stock < ProductService.MIN_STOCK || data.stock > ProductService.MAX_STOCK)) {
-            throw new ValidationError(`Stock must be between ${ProductService.MIN_STOCK} and ${ProductService.MAX_STOCK}`);
+        if (data.description !== undefined && (typeof data.description !== 'string' || data.description.length < ProductService.MIN_DESCRIPTION_LENGTH)) {
+            throw new ValidationError(`Description must be at least ${ProductService.MIN_DESCRIPTION_LENGTH} characters long`);
         }
 
-        if (data.name && data.name.length < 3) {
-            throw new ValidationError('Product name must be at least 3 characters long');
+        if (data.price !== undefined && (typeof data.price !== 'number' || data.price <= 0)) {
+            throw new ValidationError('Price must be greater than 0');
         }
 
-        if (data.description && data.description.length < 10) {
-            throw new ValidationError('Product description must be at least 10 characters long');
+        if (data.stock !== undefined && (typeof data.stock !== 'number' || data.stock < 0)) {
+            throw new ValidationError('Stock cannot be negative');
+        }
+
+        if (data.categoryId !== undefined && (typeof data.categoryId !== 'string' || !data.categoryId.trim())) {
+            throw new ValidationError('Invalid category ID');
         }
     }
 
     async createProduct(data: ProductInput): Promise<ProductOutput> {
+        this.validateProductData(data);
+
         try {
-            this.validateProductData(data);
             const product = await Product.create({
-                id: require('crypto').randomUUID(),
+                id: uuidv4(),
                 ...data,
                 isActive: true
             });
-            const productData = product.get({ plain: true }) as ProductOutput;
-            return productData;
+
+            return product.get({ plain: true }) as ProductOutput;
         } catch (error) {
-            if (error instanceof ValidationError) throw error;
             throw new Error('Error creating product');
         }
     }
 
     async getProducts(
         filters: ProductFilterOptions = {},
-        pagination: PaginationOptions = {}
-    ): Promise<PaginatedProductsResult> {
-        const { 
-            categoryId, 
-            minPrice, 
-            maxPrice, 
-            inStock, 
-            searchQuery,
-            isActive = true 
-        } = filters;
+        pagination: PaginationOptions = { page: 1, limit: 10, sortBy: 'id', sortOrder: 'DESC' }
+    ) {
+        const where: any = { isActive: true };
 
-        const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'DESC' } = pagination;
+        if (filters.categoryId) {
+            where.categoryId = filters.categoryId;
+        }
 
-        const offset = (page - 1) * limit;
-        const where: any = { isActive };
+        if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+            where.price = {};
+            if (filters.minPrice !== undefined) where.price[Op.gte] = filters.minPrice;
+            if (filters.maxPrice !== undefined) where.price[Op.lte] = filters.maxPrice;
+        }
 
-        if (categoryId) where.categoryId = categoryId;
-        if (minPrice) where.price = { ...where.price, [Op.gte]: minPrice };
-        if (maxPrice) where.price = { ...where.price, [Op.lte]: maxPrice };
-        if (inStock) where.stock = { [Op.gt]: 0 };
-        if (searchQuery) {
+        if (filters.inStock) {
+            where.stock = { [Op.gt]: 0 };
+        }
+
+        if (filters.searchQuery) {
             where[Op.or] = [
-                { name: { [Op.iLike]: `%${searchQuery}%` } },
-                { description: { [Op.iLike]: `%${searchQuery}%` } }
+                { name: { [Op.iLike]: `%${filters.searchQuery}%` } },
+                { description: { [Op.iLike]: `%${filters.searchQuery}%` } }
             ];
         }
 
         const { rows: products, count: total } = await Product.findAndCountAll({
             where,
-            limit,
-            offset,
-            order: [[sortBy, sortOrder]]
+            limit: pagination.limit ?? 10,
+            offset: ((pagination.page ?? 1) - 1) * (pagination.limit ?? 10),
+            order: [[pagination.sortBy ?? 'createdAt', pagination.sortOrder ?? 'DESC']]
         });
+
         return {
-            products: products.map(p => p.get({ plain: true })) as ProductOutput[],
+            products: products.map(product => product.get()),
             total,
-            page,
-            totalPages: Math.ceil(total / limit),
-            hasMore: page * limit < total
+            page: pagination.page ?? 1,
+            totalPages: Math.ceil(total / (pagination.limit ?? 10))
         };
     }
 
     async getProductById(id: string): Promise<ProductOutput> {
-        const product = await Product.findOne({ 
-            where: { id, isActive: true } 
+        const product = await Product.findOne({
+            where: { id, isActive: true }
         });
 
         if (!product) {
             throw new NotFoundError('Product not found');
         }
 
-        return product.get({ plain: true }) as ProductOutput;
+        return product.get() as ProductOutput;
     }
 
     async updateProduct(id: string, data: Partial<ProductInput>): Promise<ProductOutput> {
+        this.validateProductData(data);
+
         const product = await Product.findByPk(id);
-        
         if (!product) {
             throw new NotFoundError('Product not found');
         }
-
-        this.validateProductData(data);
         await product.update(data);
-        
-        return product.get({ plain: true }) as ProductOutput;
+        return product.get() as ProductOutput;
     }
 
     async deleteProduct(id: string): Promise<void> {
         const product = await Product.findByPk(id);
-        
         if (!product) {
             throw new NotFoundError('Product not found');
         }
