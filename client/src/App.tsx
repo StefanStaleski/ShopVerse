@@ -1,29 +1,13 @@
 import React from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
-import Header from './components/common/Header/Header';
-import Home from './pages/Home/Home';
-import { ThemeProvider, createTheme } from '@mui/material';
+import { BrowserRouter } from 'react-router-dom';
+import AppRoutes from './routes';
 
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#ff6b00',
-    },
-    secondary: {
-      main: '#333',
-    },
-  },
-});
-
-function App() {
+const App: React.FC = () => {
   return (
-    <ThemeProvider theme={theme}>
-      <Router>
-        <Header />
-        <Home />
-      </Router>
-    </ThemeProvider>
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
   );
-}
+};
 
 export default App;

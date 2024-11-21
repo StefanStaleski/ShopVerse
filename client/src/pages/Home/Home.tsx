@@ -3,9 +3,11 @@ import styled from 'styled-components';
 import Slider from 'react-slick';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import Header from '../../components/common/Header/Header';
 import Footer from '../../components/common/Footer/Footer';
 import NewArrivals from '../../components/sections/NewArrivals';
 import Newsletter from '../../components/sections/Newsletter';
+import { useNavigate } from 'react-router-dom';
 
 const HeroSection = styled.div`
   height: 80vh;
@@ -147,7 +149,45 @@ const CategoryDescription = styled.p`
   opacity: 0.9;
 `;
 
+const AuthButtonGroup = styled.div`
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+`;
+
+const AuthButton = styled.button`
+  padding: 0.8rem 1.5rem;
+  font-size: 1.1rem;
+  border: 2px solid white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &.login {
+    background-color: transparent;
+    color: white;
+    
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  }
+  
+  &.register {
+    background-color: #ff6b00;
+    color: white;
+    border-color: #ff6b00;
+    
+    &:hover {
+      background-color: #ff8533;
+      border-color: #ff8533;
+    }
+  }
+`;
+
 const Home: React.FC = () => {
+  const navigate = useNavigate();
+
   const categories = [
     {
       id: 1,
@@ -219,11 +259,20 @@ const Home: React.FC = () => {
 
   return (
     <div>
+      <Header />
       <HeroSection>
         <HeroContent>
           <Title>Welcome to ShopVerse</Title>
           <Subtitle>Discover amazing products at incredible prices</Subtitle>
           <CTAButton>Shop Now</CTAButton>
+          <AuthButtonGroup>
+            <AuthButton className="login" onClick={() => navigate('/login')}>
+              Login
+            </AuthButton>
+            <AuthButton className="register" onClick={() => navigate('/register')}>
+              Register
+            </AuthButton>
+          </AuthButtonGroup>
         </HeroContent>
       </HeroSection>
       

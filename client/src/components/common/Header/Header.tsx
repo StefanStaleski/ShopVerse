@@ -4,21 +4,33 @@ import { AppBar, Toolbar, IconButton, Badge } from '@mui/material';
 import { ShoppingCart, Person, Search } from '@mui/icons-material';
 
 const HeaderContainer = styled(AppBar)`
-  background-color: white;
-  color: #333;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  && {
+    background-color: #ff6b00;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
 `;
 
 const Logo = styled.div`
   font-size: 1.5rem;
   font-weight: bold;
   flex-grow: 1;
-  color: #ff6b00;
+  color: white;
 `;
 
 const NavItems = styled.div`
   display: flex;
   gap: 1rem;
+`;
+
+const StyledIconButton = styled(IconButton)`
+  &.MuiIconButton-root {
+    color: white;
+    
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  }
 `;
 
 const Header: React.FC = () => {
@@ -27,17 +39,17 @@ const Header: React.FC = () => {
       <Toolbar>
         <Logo>ShopVerse</Logo>
         <NavItems>
-          <IconButton color="inherit">
+          <StyledIconButton>
             <Search />
-          </IconButton>
-          <IconButton color="inherit">
+          </StyledIconButton>
+          <StyledIconButton>
             <Person />
-          </IconButton>
-          <IconButton color="inherit">
+          </StyledIconButton>
+          <StyledIconButton>
             <Badge badgeContent={0} color="error">
               <ShoppingCart />
             </Badge>
-          </IconButton>
+          </StyledIconButton>
         </NavItems>
       </Toolbar>
     </HeaderContainer>
