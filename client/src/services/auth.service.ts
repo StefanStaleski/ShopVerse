@@ -16,6 +16,11 @@ interface RegisterResponse {
   }
 }
 
+interface LoginData {
+  email: string;
+  password: string;
+}
+
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 export const register = async (data: RegisterData): Promise<RegisterResponse> => {
@@ -39,6 +44,29 @@ export const register = async (data: RegisterData): Promise<RegisterResponse> =>
     return responseData;
   } catch (error) {
     console.error('Registration error:', error);
+    throw error;
+  }
+};
+
+export const login = async (data: LoginData): Promise<any> => {
+  try {
+    const response = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      throw new Error(responseData.error || 'Login failed');
+    }
+
+    return responseData;
+  } catch (error) {
+    console.error('Login error:', error);
     throw error;
   }
 }; 

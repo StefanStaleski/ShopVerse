@@ -25,8 +25,6 @@ app.use(express.urlencoded({ extended: false }));
 // Logging middleware
 if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev', { stream }));
-} else {
-    app.use(morgan('combined', { stream }));
 }
 
 // API routes

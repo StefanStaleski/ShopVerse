@@ -138,7 +138,10 @@ describe('Register Component Unit Tests', () => {
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith(
         'Registration successful!',
-        expect.objectContaining(successToast)
+        expect.objectContaining({
+          ...successToast,
+          autoClose: 2000,
+        })
       );
     });
   });

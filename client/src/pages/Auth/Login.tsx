@@ -3,13 +3,12 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { validateRegistrationForm } from '../../utils/validation';
-import { register } from '../../services/auth.service';
-import { successToast, errorToast, warningToast } from '../../utils/toast.config';
-import { PasswordStrengthIndicator } from '../../components/PasswordStrengthIndicator';
+import { login } from '../../services/auth.service';
+import { successToast, errorToast } from '../../utils/toast.config';
 import { authStorage } from '../../utils/auth.storage';
+import { validateLoginForm } from '../../utils/validation';
 
-const RegisterContainer = styled.div`
+const LoginContainer = styled.div`
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -18,7 +17,7 @@ const RegisterContainer = styled.div`
   padding: 2rem;
 `;
 
-const RegisterForm = styled.form`
+const LoginForm = styled.form`
   background: white;
   padding: 2.5rem 2rem;
   border-radius: 12px;
@@ -87,10 +86,6 @@ const SubmitButton = styled.button<{ isLoading?: boolean }>`
     background-color: ${props => props.isLoading ? '#ffa366' : '#ff8533'};
     transform: ${props => props.isLoading ? 'none' : 'translateY(-1px)'};
   }
-
-  &:active {
-    transform: ${props => props.isLoading ? 'none' : 'translateY(0)'};
-  }
 `;
 
 const LoadingSpinner = styled.div`
@@ -114,22 +109,36 @@ const ErrorMessage = styled.span`
   display: block;
 `;
 
-const Register: React.FC = () => {
+const RegisterLink = styled.div`
+  text-align: center;
+  margin-top: 1.5rem;
+  color: #666;
+  font-size: 0.9rem;
+
+  a {
+    color: #ff6b00;
+    text-decoration: none;
+    font-weight: 500;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+`;
+
+const Login: React.FC = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
     email: '',
-    password: '',
-    confirmPassword: ''
+    password: ''
   });
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const validationErrors = validateRegistrationForm(formData);
+    const validationErrors = validateLoginForm(formData);
     
     if (validationErrors.length > 0) {
       const errorMap = validationErrors.reduce((acc, error) => ({
@@ -144,42 +153,47 @@ const Register: React.FC = () => {
     
     setErrors({});
     setIsLoading(true);
-    
+
     try {
-      const { password, confirmPassword, ...registrationData } = formData;
-      const response = await register({ ...registrationData, password });
-      
+      const response = await login(formData);
       authStorage.set(response);
       
-      toast.success('Registration successful!', {
+      toast.success('Login successful! Redirecting...', {
         ...successToast,
         autoClose: 2000,
         onClose: () => {
-          navigate('/');
+          navigate('/dashboard');
         }
       });
       
       setTimeout(() => {
-        navigate('/');
+        navigate('/dashboard');
       }, 2000);
       
     } catch (error) {
       if (error instanceof Error) {
-        const errorMessage = error.message === 'Email already registered' 
-          ? 'This email is already registered' 
-          : 'Registration failed. Please try again.';
+        let errorMessage = 'Login failed. Please try again.';
+        
+        switch (error.message) {
+          case 'Invalid credentials':
+            errorMessage = 'Invalid email or password';
+            break;
+          case 'Account is inactive':
+            errorMessage = 'Your account is inactive. Please contact support.';
+            break;
+        }
         
         setErrors({ submit: errorMessage });
         toast.error(errorMessage, errorToast);
       }
     } finally {
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 2000);
+      setIsLoading(false);
     }
   };
 
-  const handleChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (field: keyof typeof formData) => (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
@@ -187,7 +201,7 @@ const Register: React.FC = () => {
   };
 
   return (
-    <RegisterContainer>
+    <LoginContainer>
       <ToastContainer
         position="top-right"
         autoClose={5000}
@@ -200,30 +214,8 @@ const Register: React.FC = () => {
         pauseOnHover
         theme="colored"
       />
-      <RegisterForm onSubmit={handleSubmit} role="form">
-        <FormTitle>Create Account</FormTitle>
-        <FormGroup>
-          <Label htmlFor="firstName">First Name</Label>
-          <Input
-            id="firstName"
-            type="text"
-            value={formData.firstName}
-            onChange={handleChange('firstName')}
-            required
-          />
-          {errors.firstName && <ErrorMessage>{errors.firstName}</ErrorMessage>}
-        </FormGroup>
-        <FormGroup>
-          <Label htmlFor="lastName">Last Name</Label>
-          <Input
-            id="lastName"
-            type="text"
-            value={formData.lastName}
-            onChange={handleChange('lastName')}
-            required
-          />
-          {errors.lastName && <ErrorMessage>{errors.lastName}</ErrorMessage>}
-        </FormGroup>
+      <LoginForm role="form" onSubmit={handleSubmit}>
+        <FormTitle>Welcome Back</FormTitle>
         <FormGroup>
           <Label htmlFor="email">Email</Label>
           <Input
@@ -244,33 +236,24 @@ const Register: React.FC = () => {
             onChange={handleChange('password')}
             required
           />
-          <PasswordStrengthIndicator password={formData.password} />
           {errors.password && <ErrorMessage>{errors.password}</ErrorMessage>}
-        </FormGroup>
-        <FormGroup>
-          <Label htmlFor="confirmPassword">Confirm Password</Label>
-          <Input
-            id="confirmPassword"
-            type="password"
-            value={formData.confirmPassword}
-            onChange={handleChange('confirmPassword')}
-            required
-          />
-          {errors.confirmPassword && <ErrorMessage>{errors.confirmPassword}</ErrorMessage>}
         </FormGroup>
         <SubmitButton type="submit" isLoading={isLoading} disabled={isLoading}>
           {isLoading ? (
             <>
               <LoadingSpinner />
-              Registering...
+              Logging in...
             </>
           ) : (
-            'Register'
+            'Login'
           )}
         </SubmitButton>
-      </RegisterForm>
-    </RegisterContainer>
+        <RegisterLink>
+          Don't have an account? <a href="/register">Register here</a>
+        </RegisterLink>
+      </LoginForm>
+    </LoginContainer>
   );
 };
 
-export default Register; 
+export default Login; 

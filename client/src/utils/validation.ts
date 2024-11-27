@@ -66,4 +66,32 @@ export const validateRegistrationForm = (formData: {
   }
 
   return errors;
+};
+
+export const validateLoginForm = (formData: {
+  email: string;
+  password: string;
+}): ValidationError[] => {
+  const errors: ValidationError[] = [];
+
+  if (!validateEmail(formData.email)) {
+    errors.push({
+      field: 'email',
+      message: 'Please enter a valid email address'
+    });
+  }
+
+  if (!formData.password) {
+    errors.push({
+      field: 'password',
+      message: 'Password is required'
+    });
+  } else if (formData.password.length < 8) {
+    errors.push({
+      field: 'password',
+      message: 'Password must be at least 8 characters long'
+    });
+  }
+
+  return errors;
 }; 
