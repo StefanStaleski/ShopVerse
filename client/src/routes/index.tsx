@@ -5,6 +5,7 @@ import Register from '../pages/Auth/Register';
 import Login from '../pages/Auth/Login';
 import Dashboard from '../pages/Dashboard/Dashboard';
 import AccountManagement from '../pages/Account/AccountManagement';
+import Checkout from '../pages/Checkout/Checkout';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -14,6 +15,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/account" element={<AccountManagement />} />
+      <Route path="/checkout" element={<Checkout />} />
     </Routes>
   );
 };

@@ -1,12 +1,17 @@
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import AppRoutes from './routes';
+import { CartProvider } from './context/CartContext';
+import Cart from './components/cart/Cart';
 
 const App: React.FC = () => {
   return (
-    <BrowserRouter>
-      <AppRoutes />
-    </BrowserRouter>
+    <CartProvider>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+      <Cart />
+    </CartProvider>
   );
 };
 
